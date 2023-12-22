@@ -4,15 +4,19 @@ import { AddPostValidator } from "../validators/PostValidator.ts";
 const kv = await Deno.openKv()
 const PostController = new Hono({ strict: false });
 
-PostController.get("/", (c: any) => {
+PostController.get("/", async (c: any) => {
   const posts = kv.list({ prefix: ["posts"] });
-  return c.json(posts);
+  const new_posts = []
+  for await (const post of posts) {
+    new_posts.push(post.value)
+  }
+  return c.json(new_posts);
 });
 
 PostController.get(":id", async (c: any) => {
   const { id } = c.req.param();
-  const post = await kv.get(["posts", id]);
-  return c.json(post);
+  const post = await kv.get(["posts", Number.parseInt(id)]);
+  return c.json(post.value);
 });
 
 PostController.post("/", AddPostValidator, async (c: any) => {
